@@ -11,9 +11,8 @@
 ```
 经过测试发现，根本不是这么回事，为什么呢?我们来看看Viewpager的setOffscreenPageLimit()方法的源码
 
-```
-
-    private static final int DEFAULT_OFFSCREEN_PAGES = 1;
+```java
+   private static final int DEFAULT_OFFSCREEN_PAGES = 1;
     /**
      * Set the number of pages that should be retained to either side of the
      * current page in the view hierarchy in an idle state. Pages beyond this
