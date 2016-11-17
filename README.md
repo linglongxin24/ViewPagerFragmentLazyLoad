@@ -1,4 +1,4 @@
-#Android中ViewPager+Fragment懒加载
+#Android中ViewPager+Fragment懒加载问题解决方案
 
 >在Android中我们经常会用到ViewPager+Fragment组合。然而，有一个很让人头疼的问题就是，我们去加载数据的时候
 由于ViewPager的内部机制所限制，所以它会默认至少预加载一个。这让人很郁闷，所以，我就想到要封装一个Fragment来解决这个问题。
