@@ -48,5 +48,135 @@
 
 #2.问题再探
 我们发现Fragment中有一个setUserVisibleHint(boolean isVisibleToUser)方法，这个方法就是告诉用户，UI对用户是否可见，那么我们在这里去加载数据会怎么样呢？
+![日志](https://github.com/linglongxin24/ViewPagerFragmentLazyLoad/blob/master/screenshorts/log_error.png?raw=true)
+这又是为什么呢？
+因为ViewPager会加载好多Fragment，为了节省内容等会在Fragment不可见的某个时候调用onDestroyView()将用户界面销毁掉但是Fragment的实例还在，所以可能第一次加载没有问题，
+但是再次回到第一个Fragment再去加载的时候就会出现UI对用户可见但是视图还没有初始化。
+#3.最终解决方案
+
+```java
+package cn.bluemobi.dylan.viewpagerfragmentlazyload;
+
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.text.TextUtils;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Toast;
+
+/**
+ * 可以懒加载的Fragment
+ * Created by yuandl on 2016-11-17.
+ */
+
+public abstract class LazyLoadFragment extends Fragment {
+    /**
+     * 视图是否已经初初始化
+     */
+    protected boolean isInit = false;
+    protected final String TAG = "LazyLoadFragment";
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(setContentView(), container, false);
+        isInit = true;
+        /**初始化的时候去加载数据**/
+        isCanLoadData();
+        return view;
+    }
+
+    /**
+     * 视图是否已经对用户可见，系统的方法
+     */
+    @Override
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+        isCanLoadData();
+    }
+
+    /**
+     * 是否可以加载数据
+     * 可以加载数据的条件：
+     * 1.视图已经初始化
+     * 2.视图对用户可见
+     */
+    private void isCanLoadData() {
+        if (getUserVisibleHint() && isInit) {
+            lazyLoad();
+        }
+    }
+
+    /**
+     * 视图销毁的时候讲Fragment是否初始化的状态变为false
+     */
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        isInit = false;
+    }
+
+    protected void showToast(String message) {
+        if (!TextUtils.isEmpty(message)) {
+            Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+    /**
+     * 设置Fragment要显示的布局
+     *
+     * @return 布局的layoutId
+     */
+    protected abstract int setContentView();
+
+    /**
+     * 当视图初始化并且对用户可见的时候去真正的加载数据
+     */
+    protected abstract void lazyLoad();
+}
+
+```
+
+#4.用法
+
+LazyLoadFragment是一个抽象类，可以作为BaseFragment,继承它。
+
+ * (1).用setContentView()方法去加载要显示的布局
+
+ * (2).lazyLoad()方法去加载数据
+ 
+ ```java
+ package cn.bluemobi.dylan.viewpagerfragmentlazyload;
+ 
+ import android.util.Log;
+ 
+ /**
+  * Created by yuandl on 2016-11-17.
+  */
+ 
+ public class Fragment1 extends LazyLoadFragment {
+     @Override
+     public int setContentView() {
+         return R.layout.fm_layout1;
+     }
+ 
+     @Override
+     protected void lazyLoad() {
+         String message = "Fragment1" + (isInit ? "已经初始可以加载数据" : "没有初始化不能加载数据");
+         showToast(message);
+         Log.d(TAG, message);
+     }
+ }
+
+ ```
+ 
+#5.看效果界面
+
+![界面](https://github.com/linglongxin24/ViewPagerFragmentLazyLoad/blob/master/screenshorts/userinterface.jpg?raw=true)
+![Log](https://github.com/linglongxin24/ViewPagerFragmentLazyLoad/blob/master/screenshorts/log.png?raw=true)
 
 
+#6.[GitHub](https://github.com/linglongxin24/ViewPagerFragmentLazyLoad)

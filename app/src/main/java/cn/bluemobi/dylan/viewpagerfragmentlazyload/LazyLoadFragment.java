@@ -37,7 +37,6 @@ public abstract class LazyLoadFragment extends Fragment {
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
-        lazyLoad();
         isCanLoadData();
     }
 
@@ -49,7 +48,7 @@ public abstract class LazyLoadFragment extends Fragment {
      */
     private void isCanLoadData() {
         if (getUserVisibleHint() && isInit) {
-//            lazyLoad();
+            lazyLoad();
         }
     }
 
@@ -64,7 +63,7 @@ public abstract class LazyLoadFragment extends Fragment {
 
     protected void showToast(String message) {
         if (!TextUtils.isEmpty(message)) {
-//            Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
         }
 
     }
