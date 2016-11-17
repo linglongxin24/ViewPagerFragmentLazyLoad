@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
         fragments.add(new Fragment2());
         fragments.add(new Fragment3());
         fragments.add(new Fragment4());
-
+        vp.setOffscreenPageLimit(0);
         vp.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager()) {
             @Override
             public Fragment getItem(int position) {
