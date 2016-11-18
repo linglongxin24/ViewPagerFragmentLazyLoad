@@ -1,8 +1,9 @@
-#Android中ViewPager+Fragment懒加载问题解决方案
+#Android中ViewPager+Fragment取消(禁止)预加载延迟加载(懒加载)问题解决方案
 
 >在Android中我们经常会用到ViewPager+Fragment组合。然而，有一个很让人头疼的问题就是，我们去加载数据的时候
 由于ViewPager的内部机制所限制，所以它会默认至少预加载一个。这让人很郁闷，所以，我就想到要封装一个Fragment来解决这个问题。
-
+>这里还解决一个问题就是在[Android酷炫欢迎页播放视频,仿蚂蜂窝自由行和慕课网](http://blog.csdn.net/linglongxin24/article/details/53115253)
+ 这里感谢有一位网友提出了bug,就是在播放视频的时候如果滑动到第二页和第三页，第一页的视频还在播放，这是个让人很头疼的问题，在这里也完美解决。
 #1.问题初探
 文章开始已经说过ViewPager的预加载机制。那么，我们可不可以设置ViewPager的预加载为0，不就解决问题了吗？
 
@@ -66,8 +67,11 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 /**
- * 可以懒加载的Fragment
+ * Fragment预加载问题的解决方案：
+ * 1.可以懒加载的Fragment
+ * 2.切换到其他页面时停止加载数据（可选）
  * Created by yuandl on 2016-11-17.
+ * blog ：http://blog.csdn.net/linglongxin24/article/details/53205878
  */
 
 public abstract class LazyLoadFragment extends Fragment {
@@ -75,12 +79,14 @@ public abstract class LazyLoadFragment extends Fragment {
      * 视图是否已经初初始化
      */
     protected boolean isInit = false;
+    protected boolean isLoad = false;
     protected final String TAG = "LazyLoadFragment";
+    private View view;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(setContentView(), container, false);
+        view = inflater.inflate(setContentView(), container, false);
         isInit = true;
         /**初始化的时候去加载数据**/
         isCanLoadData();
@@ -103,8 +109,17 @@ public abstract class LazyLoadFragment extends Fragment {
      * 2.视图对用户可见
      */
     private void isCanLoadData() {
-        if (getUserVisibleHint() && isInit) {
+        if (!isInit) {
+            return;
+        }
+
+        if (getUserVisibleHint()) {
             lazyLoad();
+            isLoad = true;
+        } else {
+            if (isLoad) {
+                stopLoad();
+            }
         }
     }
 
@@ -115,6 +130,8 @@ public abstract class LazyLoadFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         isInit = false;
+        isLoad = false;
+
     }
 
     protected void showToast(String message) {
@@ -132,9 +149,38 @@ public abstract class LazyLoadFragment extends Fragment {
     protected abstract int setContentView();
 
     /**
+     * 获取设置的布局
+     *
+     * @return
+     */
+    protected View getContentView() {
+        return view;
+    }
+
+    /**
+     * 找出对应的控件
+     *
+     * @param id
+     * @param <T>
+     * @return
+     */
+    protected <T extends View> T findViewById(int id) {
+
+        return (T) getContentView().findViewById(id);
+    }
+
+    /**
      * 当视图初始化并且对用户可见的时候去真正的加载数据
      */
     protected abstract void lazyLoad();
+
+    /**
+     * 当视图已经对用户不可见并且加载过数据，如果需要在切换到其他页面时停止加载数据，可以覆写此方法
+     */
+    protected void stopLoad() {
+    }
+}
+
 }
 
 ```
@@ -146,6 +192,7 @@ LazyLoadFragment是一个抽象类，可以作为BaseFragment,继承它。
  * (1).用setContentView()方法去加载要显示的布局
 
  * (2).lazyLoad()方法去加载数据
+ * (3).stopLoad()方法可选，当视图已经对用户不可见并且加载过数据，如果需要在切换到其他页面时停止加载数据，可以覆写此方法
  
  ```java
  package cn.bluemobi.dylan.viewpagerfragmentlazyload;
@@ -164,11 +211,17 @@ LazyLoadFragment是一个抽象类，可以作为BaseFragment,继承它。
  
      @Override
      protected void lazyLoad() {
-         String message = "Fragment1" + (isInit ? "已经初始可以加载数据" : "没有初始化不能加载数据");
+         String message = "Fragment1" + (isInit ? "已经初始并已经显示给用户可以加载数据" : "没有初始化不能加载数据")+">>>>>>>>>>>>>>>>>>>";
          showToast(message);
          Log.d(TAG, message);
      }
+ 
+     @Override
+     protected void stopLoad() {
+         Log.d(TAG, "Fragment1" + "已经对用户不可见，可以停止加载数据");
+     }
  }
+
 
  ```
  
